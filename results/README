@@ -9,3 +9,5 @@ missing data encoded by this symbol (-).
 2. Teosinte folder contains 20 files (10 files with SNPs ordered based on increasing position values and with missing
 data encoded by this symbol (?), 10 files with SNPs ordered based on decreasing position values and with
 missing data encoded by this symbol (-).
+
+3. R_Assignment_AL.Rmd this is a RMD (R markdown) format, which contain the script to run the analysis of this assignment
