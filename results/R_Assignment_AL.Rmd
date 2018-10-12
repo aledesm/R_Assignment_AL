@@ -1,0 +1,217 @@
+---
+title: "R-Assignment"
+author: "Alejandro Ledesma"
+date: "10/10/2018"
+output: html_document
+    
+---
+
+#### R-Assignment Alejandro Ledesma #####
+
+### Part I. DATA INSPECTION
+
+
+## 1.1 Uploading the files: 1) fang_et_al_genotypes.txt and 2) snp_position.txt
+From the github repository we extract the files and upload them into R
+```{r}
+
+fang_et_al_genotypes <- read.delim("https://raw.githubusercontent.com/EEOB-BioData/BCB546X-Fall2018/master/assignments/UNIX_Assignment/fang_et_al_genotypes.txt", header=TRUE)
+
+snp_position <-read.delim("https://raw.githubusercontent.com/EEOB-BioData/BCB546X-Fall2018/master/assignments/UNIX_Assignment/snp_position.txt", header=TRUE)
+```
+
+
+## 1.2 Data Inspection 
+
+# 1.2.1 (fang_et al_genotypes)
+Below they are different commands on which we can see if our data was correctly uploaded
+```{r}
+
+typeof(fang_et_al_genotypes)
+nrow(fang_et_al_genotypes) 
+ncol(fang_et_al_genotypes) 
+dim(fang_et_al_genotypes) 
+colnames(fang_et_al_genotypes)
+str(fang_et_al_genotypes)
+class(fang_et_al_genotypes)
+head(fang_et_al_genotypes)
+tail(fang_et_al_genotypes)
+View(fang_et_al_genotypes)
+```
+
+# 1.2.2 (snp_position)
+```{r}
+
+typeof(snp_position)
+nrow(snp_position) 
+ncol(snp_position) 
+dim(snp_position) 
+colnames(snp_position)
+str(snp_position)
+class(snp_position)
+head(snp_position)
+tail(snp_position)
+View(snp_position)
+
+```
+
+
+# 1.3 Data Processing
+
+## 1.3.1 Extracting data and joining groups required for maize
+Here, we remove the group columns so, the SNP ID columns will be merge with the two files
+```{r}
+fang_extracted <- fang_et_al_genotypes[,3:986]
+maize <- subset(fang_extracted, Group == "ZMMIL" | Group == "ZMMLR" | Group=="ZMMMR")
+teosinte <- subset(fang_extracted, Group == "ZMPBA"| Group == "ZMPIL" | Group == "ZMPJA")
+```
+
+# 1.3.2 Transposing the data to merged them
+```{r}
+maize_transposed <- as.data.frame(t(maize[,-1]))
+teosinte_transposed <- as.data.frame(t(teosinte[,-1]))
+```
+
+# 1.3.3 Then we extract the columns of the SNP_Position file that will be used (SNP ID, chromosome number and SNP Position)
+```{r}
+snp_position_extracted <- snp_position[,c(1,3,4)]
+```
+
+# 1.3.4 Now, we sort the files in order to be merged
+```{r}
+maize_sorted <- maize_transposed[order(row.names(maize_transposed)),]
+teosinte_sorted <- teosinte_transposed[order(row.names(teosinte_transposed)),]
+snp_sorted <- snp_position_extracted[order(snp_position_extracted$SNP_ID),]
+```
+
+# 1.3.4 Then we remove the SNPS with multiple positions and unknown chromosomes 
+```{r}
+unique_snps <- subset(snp_sorted, Chromosome %in% 1:10)
+```
+
+# 1.3.5 Here, we add a column for the SNPS of maize and teosinte files, so this column will be used as common column for merging
+Here we will nee to install the package (dplyr) this package is a grammar of data manipulation, that provides a consistent set of verbs that help us to solve the most common data manipulation.
+```{r}
+maize_with_names <- add_rownames(maize_sorted, "SNP_ID")
+teosinte_with_names <- add_rownames(teosinte_sorted, "SNP_ID")
+```
+
+# 1.3.6 Now, we merge the maize and teosinte file to the snp position
+```{r}
+maize_joined <- merge(unique_snps, maize_with_names, by="SNP_ID")
+teosinte_joined <- merge(unique_snps, teosinte_with_names, by="SNP_ID")
+```
+
+# 1.3.7 Here, we sort SNPS on ascending SNP Position order
+```{r}
+maize_ascending_order <- arrange(maize_joined, Position)
+teosinte_ascending_order <- arrange(teosinte_joined, Position) 
+```
+
+# 1.3.8 Now, we sort SNPS on descending SNP Position order
+```{r}
+maize_descending_order <- arrange(maize_joined, desc(Position))
+teosinte_descending_order <- arrange(teosinte_joined, desc(Position))
+```
+
+# 1.3.9 In this step we encode missing data with (-) on the files with descending SNP Position order
+```{r}
+maize_descending_order[]<- lapply(maize_descending_order, as.character)
+maize_descending_order[maize_descending_order=='?/?'] <- '-/-'
+teosinte_descending_order[]<- lapply(teosinte_descending_order, as.character)
+teosinte_descending_order[teosinte_descending_order=='?/?'] <- '-/-'
+```
+
+#1.3.10 Now, in this step we create one file for each chromosome
+```{r}
+for(i in 1:10){
+ file_per_chromosome<-maize_ascending_order[maize_ascending_order[,2]==i,]
+ write.csv(file_per_chromosome, paste("maize_ascending_chromosome",i,".csv",sep=""),row.names=F)}
+
+for(i in 1:10){
+ file_per_chromosome<-maize_descending_order[maize_descending_order[,2]==i,]
+ write.csv(file_per_chromosome, paste("maize_descending_chromosome",i,".csv",sep=""),row.names=F)}
+
+for(i in 1:10){
+file_per_chromosome<-teosinte_ascending_order[teosinte_ascending_order[,2]==i,]
+ write.csv(file_per_chromosome, paste("teosinte_ascending_chromosome",i,".csv",sep=""),row.names=F)}
+
+for(i in 1:10){
+ file_per_chromosome<-teosinte_descending_order[teosinte_descending_order[,2]==i,]
+ write.csv(file_per_chromosome, paste("teosinte_descending_chromosome",i,".csv",sep=""),row.names=F)}
+```
+
+## Part II. Data VISUALIZATION
+
+# 2.1 Transpose and merge original data
+```{r}
+library(dplyr)
+fang_transposed_data<-as.data.frame(t(fang_et_al_genotypes))
+merged_data<-merge(snp_position, fang_transposed_data, by.x="SNP_ID",by.y="row.names",all=TRUE)
+```
+
+# 2.2 Here, we will plot the SNPs per chromosome
+```{r}
+if (!require("ggplot2")) install.packages("ggplot2")
+library(ggplot2)
+merged_data$Chromosome<-factor(merged_data$Chromosome, levels = c("1","2","3","4","5","6","7","8","9","10","unknown","multiple","NA"))
+ggplot(merged_data)+ geom_bar(aes(merged_data$Chromosome))+xlab("Chromosome") +ylab("Total Number of SNPs")
+```
+
+#2.3 Tidying the data
+```{r}
+library(reshape2)
+genotype_info <- colnames(fang_et_al_genotypes)[-c(1:3)]
+fang_tidy<-melt(fang_et_al_genotypes,measure.vars = genotype_info)
+```
+
+# 2.4 Here, we will recode the missing data as NA
+```{r}
+fang_tidy[]<- lapply(fang_tidy, as.character)
+fang_tidy[fang_tidy=='?/?'] <- 'NA'
+```
+
+# 2.5 Now, we will Classify the Genotype SNPs markers as homozygotes or heterozygotes
+```{r}
+library(plyr)
+fang_tidy$hom.het <- (fang_tidy$value=="A/A"|fang_tidy$value=="C/C"|fang_tidy$value=="G/G"|fang_tidy$value=="T/T")
+fang_class_sorted<-arrange(fang_tidy,Sample_ID,Group)
+counts <- ddply(fang_class_sorted,c("Sample_ID"),summarise,total_homozygous=sum(hom.het,na.rm=TRUE),total_heterozygous=sum(!hom.het,na.rm = TRUE), total_NA=sum(is.na(hom.het)))
+counts_combined<-melt(counts,measure.vars = c("total_homozygous","total_heterozygous","total_NA"))
+```
+
+# 2.6 In this step we will plot the proportion of homozygous, heterozygous and missing sites
+```{r}
+ggplot(counts_combined,aes(x=variable,y=value,fill=variable))+geom_bar(stat="identity",position = "stack")
+```
+
+# 2.7 Ploting proportion of homozygous, heterozygous and missing sites per Group
+```{r}
+counts_group<-ddply(fang_class_sorted,c("Group"),summarise,total_homozygous=sum(hom.het,na.rm=TRUE),total_heterozygous=sum(!hom.het,na.rm = TRUE), total_NA=sum(is.na(hom.het)))
+counts_group_combined<-melt(counts_group,measure.vars = c("total_homozygous","total_heterozygous","total_NA"))
+ggplot(counts_group_combined,aes(x=Group,y=value,fill=variable))+geom_bar(stat="identity",position = "stack")
+```
+
+# 3. My own vizualization -  Vizualing proportion of homozygous, heterozygous and missing sites in maize per Group
+```{r}
+maize_homo_and_hete <- subset(fang_et_al_genotypes, Group == "ZMMIL" | Group == "ZMMLR" | Group=="ZMMMR")
+maize_homo_and_hete_transposed <- as.data.frame(t(maize_homo_and_hete))
+joined_maize<-merge(snp_position, maize_homo_and_hete_transposed, by.x="SNP_ID",by.y="row.names",all=TRUE)
+maize_info <- colnames(maize_homo_and_hete)[-c(1:3)]
+maize_tidy<-melt(maize_homo_and_hete,measure.vars = maize_info)
+maize_tidy[]<- lapply(maize_tidy, as.character)
+maize_tidy[maize_tidy=='?/?'] <- 'NA'
+maize_tidy$homo_and_hete <- (maize_tidy$value=="A/A"|maize_tidy$value=="C/C"|maize_tidy$value=="G/G"|maize_tidy$value=="T/T")
+maize_class_sorted<-arrange(maize_tidy,Sample_ID,Group)
+counts_maize_group<-ddply(maize_class_sorted,c("Group"),summarise,total_homozygous=sum(homo_and_hete,na.rm=TRUE),total_heterozygous=sum(!homo_and_hete,na.rm = TRUE), total_NA=sum(is.na(homo_and_hete)))
+maize_counts_group_combined<-melt(counts_maize_group,measure.vars = c("total_homozygous","total_heterozygous","total_NA"))
+ggplot(maize_counts_group_combined,aes(x=Group,y=value,fill=variable))+geom_bar(stat="identity",position = "stack")
+```
+
+
+# 3.1 Other type of my own vizualization - scaterplot observing the distribution of the SNP on the cromosomes.
+```{r}
+ggplot(maize_counts_group_combined, aes(x=Group, y=value)) + geom_point(mapping = aes(x = Group, y = value, color = variable))
+```
+
+
