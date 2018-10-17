@@ -10,9 +10,18 @@ output: html_document
 
 ### Part I. DATA INSPECTION
 
-
-## 1.1 Uploading the files: 1) fang_et_al_genotypes.txt and 2) snp_position.txt
+## 1.1 Installing packages and Uploading the files: 1) fang_et_al_genotypes.txt and 2) snp_position.txt
 From the github repository we extract the files and upload them into R
+
+if (!require("tidyverse")) install.packages("tidyverse")
+library(tidyverse)
+if (!require("ggplot2")) install.packages("ggplot2")
+library(ggplot2)
+if (!require("gtools")) install.packages("gtools")
+library(gtools)
+if (!require("reshape2")) install.packages("reshape2")
+library(reshape2)
+
 ```{r}
 
 fang_et_al_genotypes <- read.delim("https://raw.githubusercontent.com/EEOB-BioData/BCB546X-Fall2018/master/assignments/UNIX_Assignment/fang_et_al_genotypes.txt", header=TRUE)
