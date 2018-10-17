@@ -36,7 +36,7 @@ str(fang_et_al_genotypes)
 class(fang_et_al_genotypes)
 head(fang_et_al_genotypes)
 tail(fang_et_al_genotypes)
-View(fang_et_al_genotypes)
+
 ```
 
 # 1.2.2 (snp_position)
@@ -51,7 +51,7 @@ str(snp_position)
 class(snp_position)
 head(snp_position)
 tail(snp_position)
-View(snp_position)
+
 
 ```
 
@@ -84,37 +84,37 @@ teosinte_sorted <- teosinte_transposed[order(row.names(teosinte_transposed)),]
 snp_sorted <- snp_position_extracted[order(snp_position_extracted$SNP_ID),]
 ```
 
-# 1.3.4 Then we remove the SNPS with multiple positions and unknown chromosomes 
+# 1.3.5 Then we remove the SNPS with multiple positions and unknown chromosomes 
 ```{r}
 unique_snps <- subset(snp_sorted, Chromosome %in% 1:10)
 ```
 
-# 1.3.5 Here, we add a column for the SNPS of maize and teosinte files, so this column will be used as common column for merging
+# 1.3.6 Here, we add a column for the SNPS of maize and teosinte files, so this column will be used as common column for merging
 Here we will nee to install the package (dplyr) this package is a grammar of data manipulation, that provides a consistent set of verbs that help us to solve the most common data manipulation.
 ```{r}
 maize_with_names <- add_rownames(maize_sorted, "SNP_ID")
 teosinte_with_names <- add_rownames(teosinte_sorted, "SNP_ID")
 ```
 
-# 1.3.6 Now, we merge the maize and teosinte file to the snp position
+# 1.3.7 Now, we merge the maize and teosinte file to the snp position
 ```{r}
 maize_joined <- merge(unique_snps, maize_with_names, by="SNP_ID")
 teosinte_joined <- merge(unique_snps, teosinte_with_names, by="SNP_ID")
 ```
 
-# 1.3.7 Here, we sort SNPS on ascending SNP Position order
+# 1.3.8 Here, we sort SNPS on ascending SNP Position order
 ```{r}
 maize_ascending_order <- arrange(maize_joined, Position)
 teosinte_ascending_order <- arrange(teosinte_joined, Position) 
 ```
 
-# 1.3.8 Now, we sort SNPS on descending SNP Position order
+# 1.3.9 Now, we sort SNPS on descending SNP Position order
 ```{r}
 maize_descending_order <- arrange(maize_joined, desc(Position))
 teosinte_descending_order <- arrange(teosinte_joined, desc(Position))
 ```
 
-# 1.3.9 In this step we encode missing data with (-) on the files with descending SNP Position order
+# 1.3.10 In this step we encode missing data with (-) on the files with descending SNP Position order
 ```{r}
 maize_descending_order[]<- lapply(maize_descending_order, as.character)
 maize_descending_order[maize_descending_order=='?/?'] <- '-/-'
@@ -122,7 +122,7 @@ teosinte_descending_order[]<- lapply(teosinte_descending_order, as.character)
 teosinte_descending_order[teosinte_descending_order=='?/?'] <- '-/-'
 ```
 
-#1.3.10 Now, in this step we create one file for each chromosome
+#1.3.11 Now, in this step we create one file for each chromosome
 ```{r}
 for(i in 1:10){
  file_per_chromosome<-maize_ascending_order[maize_ascending_order[,2]==i,]
